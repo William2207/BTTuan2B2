@@ -1,4 +1,4 @@
-const {createUserService, loginService, getUserService} = require('../services/userService');
+const {createUserService, loginService, getUserService,forgotPasswordService} = require('../services/userService');
 
 const createUser = async (req, res) => {
     const { name, email, password } = req.body;
@@ -38,5 +38,18 @@ const getAccount = async (req, res) => {
     }
     return res.status(200).json({ success: true, user: req.user });
 }
+const handleForgotPassword = async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    const result = await forgotPasswordService(email);
+    if (result.success) {
+        return res.status(200).json(result);
+    }
+    else {
+        return res.status(400).json(result);
+    }
+}
 
-module.exports = { createUser, handleLogin, getUser, getAccount };
+module.exports = { createUser, handleLogin, getUser, getAccount,handleForgotPassword};

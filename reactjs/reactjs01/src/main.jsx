@@ -30,6 +30,10 @@ const router = createBrowserRouter([
       {
         path: "register",
         lazy: () => import("./pages/register.jsx"),
+      },
+      {
+        path: "forgot-password",
+        lazy: () => import("./pages/forgotpass.jsx"),
       }
     ]
   }

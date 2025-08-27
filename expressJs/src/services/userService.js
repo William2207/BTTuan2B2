@@ -49,4 +49,17 @@ const getUserService = async() => {
     }
 }
 
-module.exports = { createUserService, loginService, getUserService };
+const forgotPasswordService = async (email) => {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return { success: false, message: 'User not found' };
+        }
+        // Here you would typically generate a reset token and send an email
+        return { success: true, message: 'Password reset link sent' };
+    } catch (error) {
+        console.error('Error during password reset:', error);
+        return { success: false, message: 'Error during password reset' };
+    }
+}
+module.exports = { createUserService, loginService, getUserService,forgotPasswordService };
