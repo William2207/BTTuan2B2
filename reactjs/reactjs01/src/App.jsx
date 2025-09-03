@@ -1,15 +1,19 @@
 import { useContext, useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Spin } from "antd";
+
 import "./App.css";
-import { Outlet } from "react-router-dom";
 import Header from "./components/layout/header.jsx";
+import ProductList from "./components/ProductList";
 import axios from "./utils/axios.customize.js";
 import { AuthContext } from "./components/context/auth.context.jsx";
-import { Spin } from "antd";
+import Login from "./pages/login";
+import Register from "./pages/register";
+import Home from "./pages/home";
 
 function App() {
   const { setAuth, appLoading, setAppLoading } = useContext(AuthContext);
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -35,8 +39,12 @@ function App() {
     fetchAccount();
   }, [setAuth, setAppLoading]);
 
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+  };
+
   return (
-    <>
+    <Router>
       {appLoading ? (
         <div
           style={{
@@ -49,12 +57,35 @@ function App() {
           <Spin size="large" />
         </div>
       ) : (
-        <>
-          <Header />
-          <Outlet />
-        </>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/"
+            element={
+              <>
+                <Header />
+                <div className="category-filter">
+                  <button onClick={() => handleCategoryChange("all")}>
+                    All
+                  </button>
+                  <button onClick={() => handleCategoryChange("clothes")}>
+                    Clothes
+                  </button>
+                  <button onClick={() => handleCategoryChange("hats")}>
+                    Hats
+                  </button>
+                  <button onClick={() => handleCategoryChange("accessories")}>
+                    Accessories
+                  </button>
+                </div>
+                <ProductList category={selectedCategory} />
+              </>
+            }
+          />
+        </Routes>
       )}
-    </>
+    </Router>
   );
 }
 
