@@ -3,33 +3,37 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-import { AuthWrapper } from './components/context/auth.context.jsx';
-import{
+import { AuthWrapper } from './components/context/auth.context.jsx'
+import {
   createBrowserRouter,
-  Route,
   RouterProvider,
-} from "react-router-dom";
+} from "react-router-dom"
+
+// Import components trực tiếp thay vì lazy loading để tránh lỗi
+import Home from './pages/home.jsx'
+import Login from './pages/login.jsx'
+import Register from './pages/register.jsx'
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App/>,
+    element: <App />,
     children: [
       {
-        index : true,
-        element: <div>Home Page</div>,
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Register />,
       },
       {
         path: "user",
         lazy: () => import("./pages/user.jsx"),
-      },
-      {
-        path: "login",
-        lazy: () => import("./pages/login.jsx"),
-      },
-      {
-        path: "register",
-        lazy: () => import("./pages/register.jsx"),
       },
       {
         path: "forgot-password",
@@ -37,13 +41,12 @@ const router = createBrowserRouter([
       }
     ]
   }
-]);
-
+])
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthWrapper>
       <RouterProvider router={router} />
     </AuthWrapper>
-  </StrictMode>,
+  </StrictMode>
 )

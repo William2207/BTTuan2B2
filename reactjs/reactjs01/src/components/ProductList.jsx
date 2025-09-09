@@ -1,94 +1,200 @@
-import React, { useState, useEffect, useRef } from "react";
+// src/components/ProductList.jsx
+
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "../utils/axios.customize";
+import { debounce } from "lodash";
 
-const ProductList = () => {
-  const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [category, setCategory] = useState("all"); // Default category
-  const observer = useRef();
+// --- Các Component con để giao diện gọn gàng hơn ---
 
-  // Fetch products when page or category changes
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get(
-          `/products?category=${category}&page=${page}&limit=10`
-        );
-        if (page === 1) {
-          setProducts(response.data.data); // Reset products if category changes
-        } else {
-          setProducts((prev) => [...prev, ...response.data.data]);
-        }
-        setHasMore(page < response.data.totalPages);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
+// Component ô tìm kiếm
+const SearchInput = ({ setSearchTerm }) => {
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setSearchTerm(value);
+    }, 500), // Chờ 500ms sau khi người dùng ngừng gõ mới tìm kiếm
+    []
+  );
 
-    fetchProducts();
-  }, [page, category]);
-
-  // Observer for lazy loading
-  const lastProductRef = (node) => {
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore) {
-        setPage((prev) => prev + 1);
-      }
-    });
-    if (node) observer.current.observe(node);
-  };
-
-  // Handle category change
-  const handleCategoryChange = (newCategory) => {
-    setCategory(newCategory);
-    setPage(1); // Reset page to 1 when category changes
-    setProducts([]); // Clear current products
+  const handleChange = (e) => {
+    debouncedSearch(e.target.value);
   };
 
   return (
-    <div>
-      <h1>Product List</h1>
+    <input
+      type="text"
+      placeholder="Tìm kiếm sản phẩm..."
+      onChange={handleChange}
+      className="product-search-input"
+    />
+  );
+};
 
-      {/* Category Selector */}
-      <div className="category-selector">
-        <button onClick={() => handleCategoryChange("all")}>All</button>
-        <button onClick={() => handleCategoryChange("clothes")}>Clothes</button>
-        <button onClick={() => handleCategoryChange("hats")}>Hats</button>
-        <button onClick={() => handleCategoryChange("accessories")}>
-          Accessories
+// Component hiển thị một sản phẩm
+const ProductCard = ({ product }) => (
+  <div className="product-card">
+    <img
+      src={product.image || "https://via.placeholder.com/150"}
+      alt={product.name}
+    />
+    <h3>{product.name}</h3>
+    <p className="product-category">{product.category}</p>
+    <p className="product-price">{product.price.toLocaleString("vi-VN")} ₫</p>
+  </div>
+);
+
+// Component phân trang
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  return (
+    <div className="pagination">
+      {pages.map((page) => (
+        <button
+          key={page}
+          className={currentPage === page ? "active" : ""}
+          onClick={() => onPageChange(page)}
+        >
+          {page}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// --- Component chính: ProductList ---
+
+const ProductList = () => {
+  // State quản lý danh sách sản phẩm và thông tin liên quan
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // State quản lý các bộ lọc và tìm kiếm
+  const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("");
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [order, setOrder] = useState("desc");
+
+  // State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Hàm gọi API để lấy sản phẩm
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = {
+        page: currentPage,
+        limit: 12, // Hiển thị 12 sản phẩm mỗi trang
+        q: searchTerm,
+        category: category,
+        minPrice: priceRange.min,
+        maxPrice: priceRange.max,
+        sortBy: sortBy,
+        order: order,
+      };
+
+      // Chỉ thêm các tham số có giá trị vào URL
+      const filteredParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v != null && v !== "")
+      );
+
+      const response = await axios.get("/api/products", {
+        params: filteredParams,
+      });
+
+      setProducts(response.data.data);
+      setTotalPages(response.data.totalPages);
+    } catch (err) {
+      setError("Không thể tải danh sách sản phẩm.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sử dụng useEffect để gọi API mỗi khi các bộ lọc hoặc trang thay đổi
+  useEffect(() => {
+    fetchProducts();
+  }, [searchTerm, category, priceRange, sortBy, order, currentPage]);
+
+  // Hàm xử lý khi thay đổi trang
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Hàm xử lý khi thay đổi khoảng giá
+  const handlePriceChange = (e) => {
+    setPriceRange({ ...priceRange, [e.target.name]: e.target.value });
+  };
+
+  return (
+    <div className="product-list-container">
+      <h1>Khám phá sản phẩm</h1>
+
+      {/* Khu vực bộ lọc */}
+      <div className="filters">
+        <SearchInput setSearchTerm={setSearchTerm} />
+
+        <select onChange={(e) => setCategory(e.target.value)}>
+          <option value="">Tất cả danh mục</option>
+          <option value="thoi-trang-nam">Thời trang nam</option>
+          <option value="thoi-trang-nu">Thời trang nữ</option>
+          <option value="phu-kien">Phụ kiện</option>
+        </select>
+
+        <div className="price-filter">
+          <input
+            type="number"
+            name="min"
+            placeholder="Giá từ"
+            value={priceRange.min}
+            onChange={handlePriceChange}
+          />
+          <input
+            type="number"
+            name="max"
+            placeholder="Giá đến"
+            value={priceRange.max}
+            onChange={handlePriceChange}
+          />
+        </div>
+
+        <select onChange={(e) => setSortBy(e.target.value)}>
+          <option value="createdAt">Mới nhất</option>
+          <option value="price">Giá</option>
+          <option value="views">Lượt xem</option>
+        </select>
+        <button onClick={() => setOrder(order === "asc" ? "desc" : "asc")}>
+          {order === "asc" ? "Tăng dần" : "Giảm dần"}
         </button>
       </div>
 
-      {/* Product Grid */}
-      <div className="product-grid">
-        {products.map((product, index) => {
-          if (products.length === index + 1) {
-            return (
-              <div
-                ref={lastProductRef}
-                key={product._id}
-                className="product-item"
-              >
-                <h2>{product.name}</h2>
-                <p>{product.description}</p>
-                <p>${product.price}</p>
-              </div>
-            );
-          } else {
-            return (
-              <div key={product._id} className="product-item">
-                <h2>{product.name}</h2>
-                <p>{product.description}</p>
-                <p>${product.price}</p>
-              </div>
-            );
-          }
-        })}
-      </div>
+      {/* Khu vực hiển thị sản phẩm */}
+      {loading && <p>Đang tải...</p>}
+      {error && <p className="error-message">{error}</p>}
 
-      {!hasMore && <p>No more products to load.</p>}
+      {!loading && !error && (
+        <>
+          <div className="product-grid">
+            {products.length > 0 ? (
+              products.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))
+            ) : (
+              <p>Không tìm thấy sản phẩm nào.</p>
+            )}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -6,25 +6,17 @@ const configViewEngine = require("./config/viewEngine");
 const cors = require("cors");
 const app = express();
 
-const PORT = process.env.PORT || 8888;
 app.use(cors());
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-configViewEngine(app);
 
-const webAPI = express.Router();
-webAPI.get("/", getHomePage);
-app.use("/", webAPI);
+connectDB();
 
-app.use("/v1/api/", require("./routes/api"));
-(async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-})().catch((err) => {
-  console.error("Failed to start the server:", err);
-  process.exit(1);
-})();
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/home", require("./routes/home"));
+app.use("/api/products", require("./routes/productRoutes"));
 
+app.get("/", (req, res) => res.send("Fullstack demo backend is running"));
 
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

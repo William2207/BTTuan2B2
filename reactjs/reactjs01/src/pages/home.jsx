@@ -1,14 +1,18 @@
-import { BiCrown } from "react-icons/bi";
-import { Result } from "antd";
+// src/pages/Home.jsx
 
-const HomePage = () => {
+import Header from "../components/layout/header.jsx";
+import ProductList from "../components/ProductList";
+import React from "react"; // Import React nếu chưa có
+
+function Home() {
   return (
-    <Result
-      icon={<BiCrown style={{ color: "#08c" }} />}
-      title="Welcome to Crow's Nest"
-      subTitle="The Crow's Nest is a simple social media app built with React and Firebase. It allows users to sign up, log in, create posts, and view posts from other users. The app is designed to be easy to use and navigate, with a clean and modern interface."
-    />
+    <div>
+      <Header />
+      <div style={{ marginTop: "20px", padding: "0 20px" }}>
+        <ProductList />
+      </div>
+    </div>
   );
-};
+}
 
-export default HomePage;
+export default Home;
