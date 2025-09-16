@@ -1,108 +1,39 @@
-import React from "react";
-import { Button, Col, Divider, Form, Input, notification, Row } from "antd";
-import { createUserApi } from "../util/api";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Form, Input, Button, message } from 'antd';
+import api from '../utils/api';
 
-const RegisterPage = () => {
+export default function Register() {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    const { name, email, password } = values;
-
-    const res = await createUserApi(name, email, password);
-
-    if (res) {
-      notification.success({
-        message: "CREATE USER",
-        description: "Success",
-      });
-      navigate("/login");
-    } else {
-      notification.error({
-        message: "CREATE USER",
-        description: "Error",
-      });
+    try {
+      await api.post('/auth/register', values);
+      message.success('Đăng ký thành công. Mời đăng nhập.');
+      navigate('/login');
+    } catch (err) {
+      console.error(err);
+      message.error(err?.response?.data?.message || 'Đăng ký thất bại');
     }
   };
 
   return (
-    <Row justify={"center"} style={{ marginTop: "30px" }}>
-      <Col xs={24} md={16} lg={8}>
-        <fieldset
-          style={{
-            padding: "15px",
-            border: "1px solid #ccc",
-            borderRadius: "5px",
-          }}
-        >
-          <legend>Đăng ký Tài Khoản</legend>
-          <Form
-            name="basic"
-            onFinish={onFinish}
-            autoComplete="off"
-            layout="vertical"
-          >
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your email!",
-                },
-                {
-                  type: "email",
-                  message: "Please enter a valid email address!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label="Password"
-              name="password"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your password!",
-                },
-              ]}
-            >
-              <Input.Password />
-            </Form.Item>
-
-            <Form.Item
-              label="Name"
-              name="name"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your name!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Submit
-              </Button>
-            </Form.Item>
-            <Link to={"/"}>
-              <ArrowLeftOutlined /> Quay lại trang chủ
-            </Link>
-            <Divider />
-            <div style={{ textAlign: "center" }}>
-              Đã có tài khoản? <Link to={"/login"}>Đăng nhập</Link>
-            </div>
-          </Form>
-        </fieldset>
-      </Col>
-    </Row>
+    <div style={{ maxWidth: 420, margin: '40px auto' }}>
+      <h2>Register</h2>
+      <Form layout="vertical" onFinish={onFinish}>
+        <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="password" label="Password" rules={[{ required: true }]}>
+          <Input.Password />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit">Register</Button>
+        </Form.Item>
+      </Form>
+    </div>
   );
-};
-
-export default RegisterPage;
+}
