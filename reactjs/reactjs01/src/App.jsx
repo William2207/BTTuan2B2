@@ -1,74 +1,60 @@
-import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
-import { Layout, Menu } from 'antd';
-import { HomeOutlined, AppstoreOutlined, ShoppingOutlined, UserOutlined, LoginOutlined, SearchOutlined } from '@ant-design/icons';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Home from './pages/Home';
-import Categories from './pages/Categories';
-import CategoryProducts from './pages/CategoryProducts';
-import Products from './pages/Products';
-import SearchResults from './pages/SearchResults';
-import RegisterTest from './pages/RegisterTest';
-import SimpleTest from './SimpleTest';
+import { useContext, useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
+import { Spin } from "antd";
 
+import "./App.css";
+import Header from "./components/layout/header.jsx";
+import ProductList from "./components/ProductList";
+import axios from "./utils/axios.customize.js";
+import { AuthContext } from "./components/context/auth.context.jsx";
 
-const { Header, Content } = Layout;
+function App() {
+  const { auth, setAuth, appLoading, setAppLoading } = useContext(AuthContext);
 
-export default function App() {
+  useEffect(() => {
+    const fetchAccount = async () => {
+      try {
+        const response = await axios.get("/v1/api/user");
+        setAuth({
+          isAuthenticated: true,
+          user: response.data,
+        });
+      } catch (error) {
+        console.error("Error fetching account:", error);
+        setAuth({
+          isAuthenticated: false,
+          user: {
+            email: "",
+            name: "",
+          },
+        });
+      } finally {
+        setAppLoading(false);
+      }
+    };
+    fetchAccount();
+  }, [setAuth, setAppLoading]);
+
+  if (appLoading) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ color: 'white', marginRight: 40, fontSize: 18, fontWeight: 'bold' }}>
-          <ShoppingOutlined style={{ marginRight: 8 }} />
-          BTVN
-        </div>
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          selectable={false}
-          style={{ flex: 1 }}
-          items={[
-            {
-              key: '1',
-              icon: <HomeOutlined />,
-              label: <Link to="/home">Trang chủ</Link>
-            },
-            {
-              key: '2',
-              icon: <AppstoreOutlined />,
-              label: <Link to="/categories">Danh mục</Link>
-            },
-            {
-              key: '3',
-              icon: <ShoppingOutlined />,
-              label: <Link to="/products">Sản phẩm</Link>
-            },
-            {
-              key: '4',
-              icon: <SearchOutlined />,
-              label: <Link to="/search">Tìm kiếm</Link>
-            },
-
-          ]}
-        />
-      </Header>
-      <Content style={{ padding: '0 50px', minHeight: 'calc(100vh - 64px)' }}>
-        <div style={{ background: '#fff', padding: 24, minHeight: '100%' }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/categories/:categoryId" element={<CategoryProducts />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/test-register" element={<RegisterTest />} />
-
-          </Routes>
-        </div>
-      </Content>
-    </Layout>
+    <div className="App">
+      <Outlet />
+    </div>
   );
 }
+
+export default App;
