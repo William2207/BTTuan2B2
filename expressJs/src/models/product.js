@@ -145,4 +145,4 @@ productSchema.index({ 'promotion.isActive': 1, 'promotion.priority': -1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ sku: 1 });
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);
